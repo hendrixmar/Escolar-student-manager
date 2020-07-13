@@ -196,6 +196,11 @@ namespace escuelasHendrik
             //addUserView.tempDataSet = ds.Tables["getTemas"].NewRow(); //empty row
             addUserView.ShowDialog();
 
+             if (addUserView.formResult.Count == 0)
+            {
+                return;
+            }
+
           
 
             Tuple< String, String > id_grado = comboBoxes["GRADO"].Find(r => r.Item1 == addUserView.formResult["GRADO"]);
@@ -287,77 +292,78 @@ namespace escuelasHendrik
             ds.Tables[0].AcceptChanges();
             dataGridView1.DataSource = ds.Tables[0];
             dataGridView1.Refresh();
-            
-            return;
+           
 
-           /*
-            try
-            {
-                DataTable dt = ds.Tables["getTemas"];
-
-                SqlCommand cmd = new SqlCommand(del,dataBaseConnection);
-
-                cmd.Parameters.Add("@idGrado",SqlDbType.Int,4,"id_grado");
-                cmd.Parameters.Add("@idAsignatura", SqlDbType.Int, 4, "id_asignatura");
-                cmd.Parameters.Add("@idBloque", SqlDbType.Int, 4, "id_bloque");
-                cmd.Parameters.Add("@idTema", SqlDbType.Int, 4, "id_tema");
-                
-                foreach (DataGridViewRow gridrow in dataGridView1.SelectedRows)
-                {
-                    string filt = "@idGrado = "             + gridrow.Cells[0].Value
-                                  + "and @idAsignatura = "  + gridrow.Cells[2].Value
-                                  + "and @idBloque = "      + gridrow.Cells[4].Value
-                                  + "and @idTema = "        + gridrow.Cells[6].Value;
-                    foreach(DataRow row in dt.Select(filt))
-                    {
-                        row.Delete();
-                    }
-                }
-
-                MessageBox.Show($"Se elimino el registro", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                da.DeleteCommand = cmd;
-                da.DeleteCommand.ExecuteNonQuery();
-                da.Update(ds,"getTemas");
-                
-            }
-            catch(Exception p)
-            {
-                Console.WriteLine($"Error {p}");
-            }
-            */
+        
         }
 
         private void Button4_Click(object sender, EventArgs e)
-        {   
-            string upd = @"UPDATE getTemas set 
-                           GRADO = @grado,
-                           ASIGNATURA = @asignatura,
-                           BLOQUE = @bloque,
-                           TEMA = @tema
+        {
+
+            int index = dataGridView1.CurrentCell.RowIndex;
+            Form3 addUserView = new Form3(comboBoxes, ds.Tables[0].Rows[index]);
+
+
+
+
+
+            //addUserView.tempDataSet = ds.Tables["getTemas"].NewRow(); //empty row
+            addUserView.ShowDialog();
+
+            if (addUserView.formResult.Count == 0)
+            {
+                return;
+            }
+            Tuple<String, String> id_grado = comboBoxes["GRADO"].Find(r => r.Item1 == addUserView.formResult["GRADO"]);
+            Tuple<String, String> id_asignatura = comboBoxes["BLOQUE"].Find(r => r.Item1 == addUserView.formResult["BLOQUE"]);
+            Tuple<String, String> id_bloque = comboBoxes["ASIGNATURA"].Find(r => r.Item1 == addUserView.formResult["ASIGNATURA"]);
+            String tema = addUserView.formResult["TEMA"];
+
+
+            Console.WriteLine(id_grado);
+            Console.WriteLine(id_bloque);
+            Console.WriteLine(id_asignatura);
+
+
+            string updateQuery = $@"UPDATE getTemas set 
+                           GRADO = '{id_grado.Item1}',
+                           ASIGNATURA = '{id_asignatura.Item1}',
+                           BLOQUE = '{id_bloque.Item1}',
+                           TEMA = '{tema}'
                            WHERE
-                           ID_GRADO = @id_grado 
-                        and ID_ASIGNATURA = @id_asignatura 
-                        and ID_BLOQUE = @id_bloque
-                        and ID_TEMA = @id_tema";
+                           ID_GRADO = {id_grado.Item2}
+                        and ID_ASIGNATURA = {id_asignatura.Item2}
+                        and ID_BLOQUE = {id_bloque.Item2}";
+
+            if (!String.IsNullOrEmpty(ds.Tables[0].Rows[index]["ID_TEMA"].ToString()))
+            {
+                updateQuery += $" and id_tema = {ds.Tables[0].Rows[index]["ID_TEMA"]}";
+            }
+
+            Console.WriteLine(updateQuery);
+            
             try
             {
-                SqlCommand cmd = new SqlCommand(upd,dataBaseConnection);
-                cmd.Parameters.Add("@id_grado", SqlDbType.Int, 8, "ID_GRADO");
-                cmd.Parameters.Add("@grado", SqlDbType.NVarChar, 50, "GRADO");
-
-                cmd.Parameters.Add("@id_asignatura", SqlDbType.Int, 8, "ID_ASIGNATURA");
-                cmd.Parameters.Add("@asignatura", SqlDbType.NVarChar, 50, "ASIGNATURA");
-
-                cmd.Parameters.Add("@id_bloque", SqlDbType.Int, 8, "ID_BLOQUE");
-                cmd.Parameters.Add("@bloque", SqlDbType.NVarChar, 50, "BLOQUE");
-
-                cmd.Parameters.Add("@id_tema", SqlDbType.Int, 8, "ID_TEMA");
-                cmd.Parameters.Add("@tema", SqlDbType.NVarChar, 50, "TEMA");
-
+                Console.WriteLine(updateQuery);
+                SqlCommand cmd = new SqlCommand(updateQuery, dataBaseConnection);
                 da.UpdateCommand = cmd;
-                da.Update(ds,"getTemas");
+                da.UpdateCommand.ExecuteNonQuery();
 
-                MessageBox.Show("Actualizacion lista");
+                MessageBox.Show("Nuevo dato actualizado con exito a la base de datos");
+
+                
+                //da.Update(ds, "getTemas");
+
+                ds.Tables[0].Rows[index]["ID_ASIGNATURA"] = id_asignatura.Item2;
+                ds.Tables[0].Rows[index]["ASIGNATURA"] = id_asignatura.Item1;
+                ds.Tables[0].Rows[index]["ID_GRADO"] = id_grado.Item2;
+                ds.Tables[0].Rows[index]["GRADO"] = id_grado.Item1;
+                ds.Tables[0].Rows[index]["TEMA"] = tema;
+                ds.Tables[0].Rows[index]["ID_BLOQUE"] = id_bloque.Item2;
+                ds.Tables[0].Rows[index]["BLOQUE"] = id_bloque.Item1;
+
+                dataGridView1.DataSource = ds.Tables[0];
+                dataGridView1.Refresh();
             }
             catch(Exception p)
             {

@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Data.SqlClient;
+
 
 namespace escuelasHendrik
 {
@@ -36,13 +36,64 @@ namespace escuelasHendrik
                 comboBox3.Items.Add(element.Item1);
             }
 
-            
+            button1.Text = "Agregar";
+
+        }
+
+        public Form3(Dictionary<string, List<Tuple<String, String>>> comboBoxes, DataRow updates)
+        {
+            InitializeComponent();
+
+            int index = 0;
+
+            foreach (Tuple<String, String> element in comboBoxes["ASIGNATURA"])
+            {
+                comboBox1.Items.Add(element.Item1);
+
+                if( element.Item1 == updates["ASIGNATURA"].ToString())
+                {
+                    comboBox1.SelectedIndex = index; 
+                }
+                index++;
+            }
+
+            index = 0;
+
+            foreach (Tuple<String, String> element in comboBoxes["BLOQUE"])
+            {
+                comboBox2.Items.Add(element.Item1);
+
+                if (element.Item1 == updates["BLOQUE"].ToString())
+                {
+                    comboBox2.SelectedIndex = index;
+                }
+                index++;
+            }
+
+            index = 0;
+
+            foreach (Tuple<String, String> element in comboBoxes["GRADO"])
+            {
+                comboBox3.Items.Add(element.Item1);
+
+                if (element.Item1 == updates["GRADO"].ToString())
+                {
+                    comboBox3.SelectedIndex = index;
+                }
+                index++;
+            }
+
+
+            textBox2.Text = updates["TEMA"].ToString();
+            button1.Text = "Actualizar";
+
+
 
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-
+            
             if (formIsEmpty())
             {
                 MessageBox.Show("Porfavor rellene todos los campos requeridos", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -97,6 +148,11 @@ namespace escuelasHendrik
         }
 
         private void label1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void textBox2_TextChanged(object sender, EventArgs e)
         {
 
         }
