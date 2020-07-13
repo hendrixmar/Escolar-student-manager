@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Collections;
 using System.Windows.Forms;
 using System.Data.SqlClient;
 
@@ -19,6 +20,8 @@ namespace escuelasHendrik
         DataSet ds = null;
         int permissionlevel;
         String userName;
+        Dictionary<string, List<Tuple<String, String>>> comboBoxes = new Dictionary<string, List< Tuple<String, String>>>();
+        
 
         public Form2()
         {
@@ -31,10 +34,11 @@ namespace escuelasHendrik
             this.permissionlevel = int.Parse(level);
             this.dataBaseConnection = dataBaseConnection;
             this.userName =  userName;
+
             label1.Text = $"Nombre del usuario: {userName}";
             label2.Text = $"Nivel de permisos: {level}";
             label3.Text = DateTime.Now.ToString(@"MM\/dd\/yyyy h\:mm tt");
-            String nivel, grado;
+
             try
             {
                 //AGREGAR ELEMENTOS AL COMBOBOX 'NIVEL'
@@ -42,32 +46,31 @@ namespace escuelasHendrik
                 SqlCommand  cmd = new SqlCommand(sqlQuery, dataBaseConnection);
                 reader = cmd.ExecuteReader();
 
-                if (reader.HasRows)
+                
+                while (reader.Read())
                 {
-                    while (reader.Read())
-                    {
-                        comboBox1.Items.Add( reader["nivel"].ToString() );
-                    }
+                    comboBox1.Items.Add( reader["nivel"].ToString() );
                 }
+                
                 reader.Close();
 
-                //AGREGAR ELEMENTOS AL COMBOBOX 'GRADOS'
+                
                 sqlQuery = @"select grado from grados";
                 cmd = new SqlCommand(sqlQuery, dataBaseConnection);
                 reader = cmd.ExecuteReader();
-                if (reader.HasRows)
+
+                
+                while (reader.Read())
                 {
-                    while (reader.Read())
-                    {
-                        comboBox2.Items.Add(reader["grado"].ToString());
-                    }
+                    comboBox2.Items.Add(reader["grado"].ToString());
                 }
+                
                 reader.Close();
 
                 da = new SqlDataAdapter();
                 ds = new DataSet();
 
-                //Tabla que tendra toda la informacion
+            //Depending the level permission the sql query will be modified
                 switch (permissionlevel)
                 {
                     case 1:
@@ -85,7 +88,28 @@ namespace escuelasHendrik
                 da.SelectCommand = cmd;
                 da.Fill(ds, "getTemas");
 
-                //Generar los datos del dataGridView
+                comboBoxes.Add("ASIGNATURA", SelectDistinct(ds.Tables["getTemas"], "ASIGNATURA"));
+                comboBoxes.Add("BLOQUE", SelectDistinct(ds.Tables["getTemas"], "BLOQUE"));
+                comboBoxes.Add("GRADO", SelectDistinct(ds.Tables["getTemas"], "GRADO"));
+                /*
+                Console.WriteLine("---- ASGINATURA ----");
+                foreach (String element in comboBoxes["ASIGNATURA"])
+                {
+                    Console.WriteLine($"<<  {element}  >>");
+                }
+
+                Console.WriteLine("---- BLOQUE ----");
+                foreach (String element in comboBoxes["BLOQUE"])
+                {
+                    Console.WriteLine($"<<  {element}  >>");
+                }
+
+                Console.WriteLine("---- GRADO ----");
+                foreach (String element in comboBoxes["GRADO"])
+                {
+                    Console.WriteLine($"<<  {element}  >>");
+                }
+                */
                 dataGridView1.RowHeaderMouseClick += new DataGridViewCellMouseEventHandler(OnRowHeaderMouseClick);
                 dataGridView1.DataSource = ds.Tables["getTemas"];
                 dataGridView1.Refresh();
@@ -131,26 +155,20 @@ namespace escuelasHendrik
             if (consulta)
             {
                 
-                try
-                {
-                    var strExpr = $"ID_GRADO = {year}";
-                    var strSort = "ID_GRADO DESC";
 
-                    var dv = ds.Tables[0].DefaultView;
-                    dv.RowFilter = strExpr;
-                    var newDS = new DataSet();
-                    var newDT = dv.ToTable();
-                    newDS.Tables.Add(newDT);
+                var strExpr = $"ID_GRADO = {year}";
+                
+                var dv = ds.Tables[0].DefaultView;
+                dv.RowFilter = strExpr;
+                var newDS = new DataSet();
+                var newDT = dv.ToTable();
+                newDS.Tables.Add(newDT);
 
-                    dataGridView1.DataSource = newDS.Tables[0];
-                    dataGridView1.Refresh();
+                dataGridView1.DataSource = newDS.Tables[0];
+                dataGridView1.Refresh();
 
                     
-                }
-                catch
-                {
-                    MessageBox.Show("Fallo en la base de datos", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+             
             }
             else
             {
@@ -168,15 +186,30 @@ namespace escuelasHendrik
 
         private void Button2_Click(object sender, EventArgs e)
         {
-            Form3 frm1 = new Form3(
-                    this.dataBaseConnection,
-                    this.userName,
-                    this.permissionlevel+12389);
+
+            Form3 addUserView = new Form3(comboBoxes);
             
-            frm1.ShowDialog();
+           
+
             
-            Console.WriteLine($"conectada ---------------------------------- {frm1.level}");
-            
+
+            //addUserView.tempDataSet = ds.Tables["getTemas"].NewRow(); //empty row
+            addUserView.ShowDialog();
+
+            foreach (var element in addUserView.formResult)
+            {
+                Console.WriteLine($"{element.Key} => {element.Value}");
+            }
+
+            /*
+            Console.WriteLine($"valor obtenido es: {dataGridView1.CurrentCell.RowIndex}   {row.GetType() }");
+            int i = 0;
+            while (i < row.Table.Columns.Count)
+            {
+                Console.WriteLine(row.Table.Columns[i].ColumnName);
+                i++;
+            }
+            */
 
             string ins = @"insert into gettemas(
                           ID_GRADO,GRADO,
@@ -190,45 +223,7 @@ namespace escuelasHendrik
                           @id_tema,@tema)";
             try
             {
-                DataTable dt = ds.Tables["getTemas"];
-                Console.WriteLine(dataGridView1.SelectedRows[0].Cells[0].Value);
-                Console.WriteLine(dataGridView1.SelectedRows[0].Cells[1].Value);
-                Console.WriteLine(dataGridView1.SelectedRows[0].Cells[2].Value);
-                Console.WriteLine(dataGridView1.SelectedRows[0].Cells[3].Value);
-                Console.WriteLine(dataGridView1.SelectedRows[0].Cells[4].Value);
-                Console.WriteLine(dataGridView1.SelectedRows[0].Cells[5].Value);
-                Console.WriteLine(dataGridView1.SelectedRows[0].Cells[6].Value);
-                Console.WriteLine(dataGridView1.SelectedRows[0].Cells[7].Value);
-
-                // add a row
-                DataRow newRow = dt.NewRow();
-                newRow["id_grado"]      = dataGridView1.SelectedRows[0].Cells[0].Value;
-                newRow["grado"]         = dataGridView1.SelectedRows[0].Cells[1].Value;
-                newRow["id_asignatura"] = dataGridView1.SelectedRows[0].Cells[2].Value;
-                newRow["asignatura"]    = dataGridView1.SelectedRows[0].Cells[3].Value;
-                newRow["id_bloque"]     = dataGridView1.SelectedRows[0].Cells[4].Value;
-                newRow["bloque"]        = dataGridView1.SelectedRows[0].Cells[5].Value;
-                newRow["id_tema"]       = dataGridView1.SelectedRows[0].Cells[6].Value;
-                newRow["tema"]          = dataGridView1.SelectedRows[0].Cells[7].Value;
-                dt.Rows.Add(newRow);
-
-                SqlCommand cmd = new SqlCommand(ins,dataBaseConnection);
-
-                cmd.Parameters.Add("@id_grado", SqlDbType.Int,8,"ID_GRADO");
-                cmd.Parameters.Add("@grado", SqlDbType.NVarChar, 50, "GRADO");
-
-                cmd.Parameters.Add("@id_asignatura", SqlDbType.Int, 8, "ID_ASIGNATURA");
-                cmd.Parameters.Add("@asignatura", SqlDbType.NVarChar, 50, "ASIGNATURA");
-
-                cmd.Parameters.Add("@id_bloque", SqlDbType.Int, 8, "ID_BLOQUE");
-                cmd.Parameters.Add("@bloque", SqlDbType.NVarChar, 50, "BLOQUE");
-
-                cmd.Parameters.Add("@id_tema", SqlDbType.Int, 8, "ID_TEMA");
-                cmd.Parameters.Add("@tema", SqlDbType.NVarChar, 50, "TEMA");
-
-                da.InsertCommand = cmd;
-                da.Update(dt);
-                Console.WriteLine("Se inserto");
+               
             }
             catch(Exception p)
             {
@@ -372,6 +367,31 @@ namespace escuelasHendrik
             row["column2"] = "b3";
             ds.Tables["myTable"].Rows.Add(row);
             */
+        }
+   
+        public List<Tuple<String, String>> SelectDistinct(DataTable SourceTable, string FieldName)
+        {
+            // Create a Datatable – datatype same as FieldName
+            HashSet<String> checkingUniquesValues = new HashSet<String>();
+
+            List<Tuple<String, String>> output = new List<Tuple<String, String>>();
+
+            foreach (DataRow row in SourceTable.Rows)
+            {
+            
+                String item = row[FieldName].ToString();
+                String id = row[$"ID_{FieldName}"].ToString();
+
+                if (!checkingUniquesValues.Contains(item))
+                {
+                    output.Add(new Tuple<String, String>(item, id));
+                    checkingUniquesValues.Add(item);
+                }
+                
+            }
+
+            return output;
+        
         }
     }
 }
