@@ -64,19 +64,13 @@ namespace escuelasHendrik
         }
         private bool formIsEmpty()
         {
-            bool temp = true;
+            bool temp = false;
 
          
-            temp &= ( String.IsNullOrEmpty(textBox2.Text) || String.IsNullOrWhiteSpace(textBox2.Text) );
-            Console.WriteLine(temp);
-            temp &= ( String.IsNullOrEmpty(comboBox1.Text) || String.IsNullOrWhiteSpace(comboBox1.Text) );
-            Console.WriteLine(temp);
-            temp &= ( String.IsNullOrEmpty(comboBox2.Text) || String.IsNullOrWhiteSpace(comboBox2.Text) );
-            Console.WriteLine(temp);
-            temp &= ( String.IsNullOrEmpty(comboBox3.Text) || String.IsNullOrWhiteSpace(comboBox3.Text) );
-            Console.WriteLine(temp);
-           
-
+            temp |= ( String.IsNullOrEmpty(textBox2.Text) || String.IsNullOrWhiteSpace(textBox2.Text) );
+            temp |= ( String.IsNullOrEmpty(comboBox1.Text) || String.IsNullOrWhiteSpace(comboBox1.Text) );
+            temp |= ( String.IsNullOrEmpty(comboBox2.Text) || String.IsNullOrWhiteSpace(comboBox2.Text) );
+            temp |= ( String.IsNullOrEmpty(comboBox3.Text) || String.IsNullOrWhiteSpace(comboBox3.Text) );
 
             return temp;
         }

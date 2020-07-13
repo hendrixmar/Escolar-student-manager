@@ -196,11 +196,16 @@ namespace escuelasHendrik
             //addUserView.tempDataSet = ds.Tables["getTemas"].NewRow(); //empty row
             addUserView.ShowDialog();
 
-            foreach (var element in addUserView.formResult)
-            {
-                Console.WriteLine($"{element.Key} => {element.Value}");
-            }
+          
 
+            Tuple< String, String > id_grado = comboBoxes["GRADO"].Find(r => r.Item1 == addUserView.formResult["GRADO"]);
+            Tuple< String, String > id_asignatura = comboBoxes["BLOQUE"].Find(r => r.Item1 == addUserView.formResult["BLOQUE"]);
+            Tuple< String, String > id_bloque = comboBoxes["ASIGNATURA"].Find(r => r.Item1 == addUserView.formResult["ASIGNATURA"]);
+            String tema = addUserView.formResult["TEMA"];
+
+            Console.WriteLine(id_grado);
+            Console.WriteLine(id_bloque);
+            Console.WriteLine(id_asignatura);
             /*
             Console.WriteLine($"valor obtenido es: {dataGridView1.CurrentCell.RowIndex}   {row.GetType() }");
             int i = 0;
@@ -211,19 +216,42 @@ namespace escuelasHendrik
             }
             */
 
-            string ins = @"insert into gettemas(
-                          ID_GRADO,GRADO,
+            string insertion = $@"insert into gettemas(
                           ID_ASIGNATURA,ASIGNATURA,
+                          ID_GRADO,GRADO,
                           ID_BLOQUE,BLOQUE,
-                          ID_TEMA,TEMA)
+                          TEMA)
                           values(
-                          @id_grado,@grado,
-                          @id_asignatura,@asignatura,
-                          @id_bloque,@bloque,
-                          @id_tema,@tema)";
+                            {id_asignatura.Item2}, '{id_asignatura.Item1}',
+                            {id_grado.Item2}, '{id_grado.Item1}',
+                            {id_bloque.Item2},'{id_bloque.Item1}',
+                          '{tema}')";
             try
             {
-               
+                
+                Console.WriteLine(insertion);
+                SqlCommand cmd = new SqlCommand(insertion, dataBaseConnection);
+                da.InsertCommand = cmd;
+                da.InsertCommand.ExecuteNonQuery();
+
+                MessageBox.Show("Nuevo dato agregado con exito a la base de datos");
+
+                DataRow temp = ds.Tables["getTemas"].NewRow();
+                //da.Update(ds, "getTemas");
+
+                temp["ID_ASIGNATURA"] = id_asignatura.Item2;
+                temp["ASIGNATURA"] = id_asignatura.Item1;
+                temp["ID_GRADO"] = id_grado.Item2;
+                temp["GRADO"] = id_grado.Item1;
+                temp["TEMA"] = tema;
+                temp["ID_BLOQUE"] = id_bloque.Item2;
+                temp["BLOQUE"] = id_bloque.Item1;
+
+                ds.Tables[0].Rows.Add(temp);
+                dataGridView1.DataSource = ds.Tables[0];
+                dataGridView1.Refresh();
+
+
             }
             catch(Exception p)
             {
@@ -233,12 +261,36 @@ namespace escuelasHendrik
 
         private void Button3_Click(object sender, EventArgs e)
         {
-            Console.WriteLine("---------BORRAR-----------");
-           string del = @"delete from gettemas where
-                        id_grado = @idGrado 
-                        and id_asignatura = @idAsignatura 
-                        and id_bloque = @idBloque
-                        and id_tema = @idTema";
+            int index = dataGridView1.CurrentCell.RowIndex;
+
+
+            string deleteQuery = $@"delete from gettemas where
+                        id_grado = {ds.Tables[0].Rows[index]["ID_GRADO"]} 
+                        and id_asignatura = {ds.Tables[0].Rows[index]["ID_ASIGNATURA"]}
+                        and id_bloque = {ds.Tables[0].Rows[index]["ID_BLOQUE"]}";
+
+            
+            
+            
+            if(!String.IsNullOrEmpty(ds.Tables[0].Rows[index]["ID_TEMA"].ToString()))
+            {
+                deleteQuery += $"and id_tema = {ds.Tables[0].Rows[index]["ID_TEMA"]}";
+            }
+
+            
+            MessageBox.Show($"Se ha borrado el tema {ds.Tables[0].Rows[index]["TEMA"]}");
+            SqlCommand cmd = new SqlCommand(deleteQuery, dataBaseConnection);
+            da.InsertCommand = cmd;
+            da.InsertCommand.ExecuteNonQuery();
+
+            ds.Tables[0].Rows[index].Delete();
+            ds.Tables[0].AcceptChanges();
+            dataGridView1.DataSource = ds.Tables[0];
+            dataGridView1.Refresh();
+            
+            return;
+
+           /*
             try
             {
                 DataTable dt = ds.Tables["getTemas"];
@@ -249,7 +301,7 @@ namespace escuelasHendrik
                 cmd.Parameters.Add("@idAsignatura", SqlDbType.Int, 4, "id_asignatura");
                 cmd.Parameters.Add("@idBloque", SqlDbType.Int, 4, "id_bloque");
                 cmd.Parameters.Add("@idTema", SqlDbType.Int, 4, "id_tema");
-                Console.WriteLine("aqui");
+                
                 foreach (DataGridViewRow gridrow in dataGridView1.SelectedRows)
                 {
                     string filt = "@idGrado = "             + gridrow.Cells[0].Value
@@ -261,15 +313,18 @@ namespace escuelasHendrik
                         row.Delete();
                     }
                 }
-                Console.WriteLine("alla");
+
+                MessageBox.Show($"Se elimino el registro", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 da.DeleteCommand = cmd;
+                da.DeleteCommand.ExecuteNonQuery();
                 da.Update(ds,"getTemas");
-                Console.WriteLine("Se realizo elimino");
+                
             }
             catch(Exception p)
             {
-                Console.WriteLine("Error");
+                Console.WriteLine($"Error {p}");
             }
+            */
         }
 
         private void Button4_Click(object sender, EventArgs e)
@@ -333,7 +388,7 @@ namespace escuelasHendrik
 
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
-            MessageBox.Show($"{dataGridView1.CurrentCell.RowIndex }"); 
+            //MessageBox.Show($"{dataGridView1.CurrentCell.RowIndex }"); 
         }
 
         private void comboBox2_SelectedIndexChanged(object sender, EventArgs e)
@@ -343,7 +398,7 @@ namespace escuelasHendrik
 
         void OnRowHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e)
         {
-            MessageBox.Show($"You clicked row {dataGridView1.CurrentCell.RowIndex }");
+            //MessageBox.Show($"You clicked row {dataGridView1.CurrentCell.RowIndex }");
             int current = dataGridView1.CurrentCell.RowIndex;
         }
 
