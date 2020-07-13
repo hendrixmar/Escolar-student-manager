@@ -41,7 +41,7 @@ namespace escuelasHendrik
 
             try
             {
-                //AGREGAR ELEMENTOS AL COMBOBOX 'NIVEL'
+                
                 String sqlQuery = @"select nivel from grados group by nivel";
                 SqlCommand  cmd = new SqlCommand(sqlQuery, dataBaseConnection);
                 reader = cmd.ExecuteReader();
@@ -423,11 +423,7 @@ namespace escuelasHendrik
                 Console.WriteLine(row.Table.Columns[i].ColumnName);
                 i++;
             }
-            /*
-            row["column1"] = "a3";
-            row["column2"] = "b3";
-            ds.Tables["myTable"].Rows.Add(row);
-            */
+          
         }
    
         public List<Tuple<String, String>> SelectDistinct(DataTable SourceTable, string FieldName)
